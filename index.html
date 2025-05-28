@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文本转语音工具</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+        }
+        .container {
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+        }
+        .form-group {
+            margin-bottom: 24px;
+        }
+        .form-label {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 16px;
+            color: #333;
+        }
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            min-height: 120px;
+            resize: vertical;
+            margin-bottom: 24px;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #4086F4;
+        }
+        .voice-groups {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .voice-group {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .voice-group-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .voice-group-title .model-tag {
+            font-size: 12px;
+            padding: 2px 8px;
+            background-color: #e3f2fd;
+            color: #1976d2;
+            border-radius: 4px;
+            font-weight: normal;
+        }
+        .radio-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 16px;
+            margin-bottom: 0;
+        }
+        .radio-option {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .radio-input {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ddd;
+            border-radius: 50%;
+            margin-right: 8px;
+            position: relative;
+            cursor: pointer;
+        }
+        .radio-input:checked {
+            border-color: #4086F4;
+        }
+        .radio-input:checked::after {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #4086F4;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .radio-label {
+            font-size: 14px;
+            color: #333;
+        }
+        .convert-button {
+            width: 100%;
+            padding: 14px;
+            background-color: #4086F4;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .convert-button:hover {
+            background-color: #3076E4;
+        }
+        #status {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        audio {
+            width: 100%;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>文本转语音工具</h1>
+        <div class="subtitle">选择音色，输入文本，一键转换为语音</div>
+        
+        <div class="form-group">
+            <div class="form-label">输入文本</div>
+            <textarea id="text" placeholder="请输入要转换的文本"></textarea>
+        </div>
+
+        <div class="form-group">
+            <div class="form-label">选择音色</div>
+            <div class="voice-groups">
+                <div class="voice-group">
+                    <div class="voice-group-title">
+                        生动音色 <span class="model-tag">step-tts-vivid</span>
+                    </div>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="voice" value="shuangkuainansheng" class="radio-input" data-model="step-tts-vivid">
+                            <span class="radio-label">爽快男声</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="voice" value="ganliannvsheng" class="radio-input" data-model="step-tts-vivid">
+                            <span class="radio-label">干练女声</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="voice" value="qinhenvsheng" class="radio-input" data-model="step-tts-vivid">
+                            <span class="radio-label">亲和女声</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="voice" value="huolinvsheng" class="radio-input" data-model="step-tts-vivid">
+                            <span class="radio-label">活力女声</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="voice-group">
+                    <div class="voice-group-title">
+                        标准音色 <span class="model-tag">step-tts-mini</span>
+                    </div>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="voice" value="cixingnansheng" class="radio-input" data-model="step-tts-mini" checked>
+                            <span class="radio-label">磁性男声</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="voice" value="zhengpaiqingnian" class="radio-input" data-model="step-tts-mini">
+                            <span class="radio-label">正派青年</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="voice" value="yuanqinansheng" class="radio-input" data-model="step-tts-mini">
+                            <span class="radio-label">元气男声</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="voice" value="qingniandaxuesheng" class="radio-input" data-model="step-tts-mini">
+                            <span class="radio-label">青年大学生</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="voice" value="boyinnansheng" class="radio-input" data-model="step-tts-mini">
+                            <span class="radio-label">播音男声</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="voice" value="ruyananshi" class="radio-input" data-model="step-tts-mini">
+                            <span class="radio-label">儒雅男士</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="voice" value="shenchennanyin" class="radio-input" data-model="step-tts-mini">
+                            <span class="radio-label">深沉男音</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="voice" value="qinqienvsheng" class="radio-input" data-model="step-tts-mini">
+                            <span class="radio-label">亲切女声</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="voice" value="wenrounvsheng" class="radio-input" data-model="step-tts-mini">
+                            <span class="radio-label">温柔女声</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="voice" value="jilingshaonv" class="radio-input" data-model="step-tts-mini">
+                            <span class="radio-label">机灵少女</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="voice" value="yuanqishaonv" class="radio-input" data-model="step-tts-mini">
+                            <span class="radio-label">元气少女</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="voice" value="ruanmengnvsheng" class="radio-input" data-model="step-tts-mini">
+                            <span class="radio-label">软萌女声</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="voice" value="youyanvsheng" class="radio-input" data-model="step-tts-mini">
+                            <span class="radio-label">优雅女声</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="voice" value="lengyanyujie" class="radio-input" data-model="step-tts-mini">
+                            <span class="radio-label">冷艳御姐</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="voice" value="shuangkuaijiejie" class="radio-input" data-model="step-tts-mini">
+                            <span class="radio-label">爽快姐姐</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="voice" value="wenjingxuejie" class="radio-input" data-model="step-tts-mini">
+                            <span class="radio-label">文静学姐</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="voice" value="linjiajiejie" class="radio-input" data-model="step-tts-mini">
+                            <span class="radio-label">邻家姐姐</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="voice" value="linjiameimei" class="radio-input" data-model="step-tts-mini">
+                            <span class="radio-label">邻家妹妹</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="voice" value="zhixingjiejie" class="radio-input" data-model="step-tts-mini">
+                            <span class="radio-label">知性姐姐</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="convert-button" onclick="convertToSpeech()">转换为语音</button>
+        <div id="status"></div>
+        <audio id="audio" controls style="display: none;"></audio>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html> 
