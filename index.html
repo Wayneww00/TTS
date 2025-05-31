@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>文本转语音工具</title>
     <style>
         body {
@@ -11,6 +11,8 @@
             margin: 0 auto;
             padding: 20px;
             background-color: #fff;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
         .container {
             padding: 20px;
@@ -40,10 +42,12 @@
             padding: 12px;
             border: 1px solid #e0e0e0;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 16px; /* iOS优化：防止缩放 */
             min-height: 120px;
             resize: vertical;
             margin-bottom: 24px;
+            box-sizing: border-box; /* 确保边框不会溢出 */
+            -webkit-appearance: none; /* iOS样式重置 */
         }
         textarea:focus {
             outline: none;
@@ -86,6 +90,13 @@
             display: flex;
             align-items: center;
             cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+            -webkit-tap-highlight-color: transparent; /* 移除iOS点击高亮 */
+        }
+        .radio-option:hover, .radio-option:active {
+            background-color: #f5f5f5;
         }
         .radio-input {
             appearance: none;
@@ -97,6 +108,7 @@
             margin-right: 8px;
             position: relative;
             cursor: pointer;
+            flex-shrink: 0; /* 防止收缩 */
         }
         .radio-input:checked {
             border-color: #4086F4;
@@ -115,10 +127,12 @@
         .radio-label {
             font-size: 14px;
             color: #333;
+            user-select: none;
+            -webkit-user-select: none;
         }
         .convert-button {
             width: 100%;
-            padding: 14px;
+            padding: 16px; /* 增加移动端触摸区域 */
             background-color: #4086F4;
             color: white;
             border: none;
@@ -126,9 +140,15 @@
             font-size: 16px;
             cursor: pointer;
             transition: background-color 0.2s;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-appearance: none; /* iOS样式重置 */
         }
-        .convert-button:hover {
+        .convert-button:hover, .convert-button:active {
             background-color: #3076E4;
+        }
+        .convert-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
         }
         #status {
             margin-top: 16px;
@@ -147,6 +167,42 @@
         audio {
             width: 100%;
             margin-top: 20px;
+            outline: none;
+        }
+        
+        /* iOS特定提示 */
+        .ios-notice {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        /* 移动端优化 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 10px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+            .radio-group {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 12px;
+            }
+            .radio-option {
+                padding: 6px;
+            }
+            textarea {
+                font-size: 16px; /* 防止iOS缩放 */
+            }
         }
     </style>
 </head>
@@ -154,6 +210,11 @@
     <div class="container">
         <h1>文本转语音工具</h1>
         <div class="subtitle">选择音色，输入文本，一键转换为语音</div>
+        
+        <!-- iOS设备提示 -->
+        <div id="ios-notice" class="ios-notice">
+            <strong>iOS用户提示：</strong>请确保设备未静音，音量已调节，并允许网页播放音频。首次使用可能需要手动点击播放按钮。
+        </div>
         
         <div class="form-group">
             <div class="form-label">输入文本</div>
