@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调试信息 - 文本转语音工具</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .debug-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .debug-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .test-button {
+            background: #4086F4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:disabled {
+            background: #ccc;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success { background: #e8f5e9; color: #2e7d32; }
+        .error { background: #ffebee; color: #c62828; }
+        .warning { background: #fff3cd; color: #856404; }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>调试信息页面</h1>
+    
+    <div class="debug-section">
+        <div class="debug-title">设备信息</div>
+        <div id="device-info"></div>
+    </div>
+    
+    <div class="debug-section">
+        <div class="debug-title">网络状态</div>
+        <div id="network-info"></div>
+        <button class="test-button" onclick="testNetwork()">测试网络连接</button>
+        <div id="network-result"></div>
+    </div>
+    
+    <div class="debug-section">
+        <div class="debug-title">API连接测试</div>
+        <button class="test-button" onclick="testAPI()">测试API连接</button>
+        <div id="api-result"></div>
+    </div>
+    
+    <div class="debug-section">
+        <div class="debug-title">HTTPS检查</div>
+        <div id="https-info"></div>
+    </div>
+    
+    <div class="debug-section">
+        <div class="debug-title">控制台日志</div>
+        <div id="console-logs"></div>
+        <button class="test-button" onclick="clearLogs()">清空日志</button>
+    </div>
+
+    <script>
+        let logs = [];
+        
+        // 拦截console.log
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        console.log = function(...args) {
+            logs.push({ type: 'log', message: args.join(' '), time: new Date().toLocaleTimeString() });
+            updateConsoleLogs();
+            originalLog.apply(console, args);
+        };
+        
+        console.error = function(...args) {
+            logs.push({ type: 'error', message: args.join(' '), time: new Date().toLocaleTimeString() });
+            updateConsoleLogs();
+            originalError.apply(console, args);
+        };
+        
+        console.warn = function(...args) {
+            logs.push({ type: 'warn', message: args.join(' '), time: new Date().toLocaleTimeString() });
+            updateConsoleLogs();
+            originalWarn.apply(console, args);
+        };
+        
+        function updateConsoleLogs() {
+            const logsDiv = document.getElementById('console-logs');
+            logsDiv.innerHTML = logs.slice(-10).map(log => 
+                `<div class="${log.type}">[${log.time}] ${log.message}</div>`
+            ).join('');
+        }
+        
+        function clearLogs() {
+            logs = [];
+            updateConsoleLogs();
+        }
+        
+        // 检测设备信息
+        function getDeviceInfo() {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            return {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                isIOS: isIOS,
+                isMobile: isMobile,
+                language: navigator.language,
+                onLine: navigator.onLine,
+                cookieEnabled: navigator.cookieEnabled,
+                doNotTrack: navigator.doNotTrack,
+                maxTouchPoints: navigator.maxTouchPoints || 0,
+                connection: navigator.connection ? {
+                    effectiveType: navigator.connection.effectiveType,
+                    downlink: navigator.connection.downlink,
+                    rtt: navigator.connection.rtt
+                } : 'Not available'
+            };
+        }
+        
+        // 测试网络连接
+        async function testNetwork() {
+            const resultDiv = document.getElementById('network-result');
+            resultDiv.innerHTML = '<div class="warning">测试中...</div>';
+            
+            const tests = [
+                { name: 'DNS解析', url: 'https://dns.google/resolve?name=google.com&type=A' },
+                { name: '百度连通性', url: 'https://www.baidu.com/favicon.ico' },
+                { name: 'API域名连通性', url: 'https://api.stepfun.com' }
+            ];
+            
+            const results = [];
+            
+            for (const test of tests) {
+                try {
+                    const start = performance.now();
+                    const response = await fetch(test.url, { method: 'HEAD', mode: 'no-cors' });
+                    const end = performance.now();
+                    results.push({
+                        name: test.name,
+                        success: true,
+                        time: Math.round(end - start),
+                        status: response.status || 'no-cors'
+                    });
+                } catch (error) {
+                    results.push({
+                        name: test.name,
+                        success: false,
+                        error: error.message
+                    });
+                }
+            }
+            
+            resultDiv.innerHTML = results.map(result => 
+                `<div class="${result.success ? 'success' : 'error'}">
+                    ${result.name}: ${result.success ? `✓ ${result.time}ms (${result.status})` : `✗ ${result.error}`}
+                </div>`
+            ).join('');
+        }
+        
+        // 测试API连接
+        async function testAPI() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.innerHTML = '<div class="warning">测试中...</div>';
+            
+            try {
+                const response = await fetch('https://api.stepfun.com/v1/audio/speech', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer 7hBnDeUWBpI3K2c48hrsYfFgAAY2FCuh9K591JXQfz0BBexoFNMnzN9c19ZMGm4N7'
+                    },
+                    body: JSON.stringify({
+                        model: 'step-tts-mini',
+                        input: '测试',
+                        voice: 'cixingnansheng',
+                        response_format: 'mp3'
+                    })
+                });
+                
+                const contentType = response.headers.get('content-type');
+                const contentLength = response.headers.get('content-length');
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>API测试成功</strong><br>
+                            状态码: ${response.status}<br>
+                            内容类型: ${contentType}<br>
+                            内容长度: ${contentLength || '未知'}<br>
+                            Blob大小: ${blob.size} bytes<br>
+                            Blob类型: ${blob.type}
+                        </div>
+                    `;
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <strong>API测试失败</strong><br>
+                            状态码: ${response.status}<br>
+                            错误信息: ${errorText}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>API请求失败</strong><br>
+                        错误类型: ${error.name}<br>
+                        错误信息: ${error.message}<br>
+                        堆栈信息: <pre>${error.stack}</pre>
+                    </div>
+                `;
+            }
+        }
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            // 显示设备信息
+            const deviceInfo = getDeviceInfo();
+            document.getElementById('device-info').innerHTML = `
+                <pre>${JSON.stringify(deviceInfo, null, 2)}</pre>
+            `;
+            
+            // 显示网络状态
+            document.getElementById('network-info').innerHTML = `
+                <div>在线状态: ${navigator.onLine ? '✓ 在线' : '✗ 离线'}</div>
+                <div>连接信息: ${JSON.stringify(navigator.connection || {}, null, 2)}</div>
+            `;
+            
+            // 显示HTTPS信息
+            document.getElementById('https-info').innerHTML = `
+                <div>协议: ${location.protocol}</div>
+                <div>主机: ${location.host}</div>
+                <div>完整URL: ${location.href}</div>
+                <div class="${location.protocol === 'https:' ? 'success' : 'error'}">
+                    ${location.protocol === 'https:' ? '✓ 使用HTTPS' : '✗ 未使用HTTPS (可能导致API调用失败)'}
+                </div>
+            `;
+            
+            // 监听网络状态变化
+            window.addEventListener('online', () => {
+                console.log('网络连接已恢复');
+                document.getElementById('network-info').innerHTML += '<div class="success">网络连接已恢复</div>';
+            });
+            
+            window.addEventListener('offline', () => {
+                console.log('网络连接已断开');
+                document.getElementById('network-info').innerHTML += '<div class="error">网络连接已断开</div>';
+            });
+        });
+    </script>
+</body>
+</html> 
